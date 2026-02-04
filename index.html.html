@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOS 睡眠播放器</title>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 40px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 16px 0;
+        }
+        .header h1 {
+            color: #fb923c;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .card {
+            background: #334155;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 音訊輸入區 */
+        .audio-input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            padding: 14px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 12px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        .audio-input::placeholder {
+            color: #64748b;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-small {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-load {
+            background: #fb923c;
+            color: #1e293b;
+        }
+        .btn-clear {
+            background: #475569;
+            color: #94a3b8;
+            flex: 0.5;
+        }
+
+        /* 播放器 */
+        .player-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .now-playing {
+            color: #fb923c;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        audio {
+            width: 100%;
+            height: 50px;
+            border-radius: 8px;
+        }
+        audio::-webkit-media-controls-panel {
+            background: #1e293b;
+        }
+
+        /* 計時器 */
+        .timer-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        .timer-label {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .timer {
+            font-size: 52px;
+            font-weight: bold;
+            font-family: "SF Mono", Monaco, "Courier New", monospace;
+            color: #fb923c;
+            letter-spacing: 2px;
+        }
+        .status {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+        .status.playing { color: #4ade80; }
+        .status.warning { color: #fbbf24; }
+        .status.error { color: #f87171; }
+
+        /* 設定 */
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .setting-item label {
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .setting-item input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            padding: 14px;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            -webkit-appearance: none;
+        }
+        .progress-box {
+            padding: 14px;
+            background: #1e293b;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            color: #94a3b8;
+            font-family: monospace;
+        }
+
+        /* 主按鈕 */
+        .btn-main {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: transform 0.1s;
+        }
+        .btn-main:active {
+            transform: scale(0.98);
+        }
+        .btn-start {
+            background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+            color: #1e293b;
+        }
+        .btn-stop {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-next {
+            background: #475569;
+            color: white;
+        }
+
+        /* 播放列表 */
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #1e293b;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .playlist-item:active {
+            background: #475569;
+        }
+        .playlist-item.active {
+            border: 2px solid #fb923c;
+        }
+        .playlist-item .num {
+            background: #475569;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .playlist-item.active .num {
+            background: #fb923c;
+            color: #1e293b;
+        }
+        .playlist-item .title {
+            flex: 1;
+            font-size: 14px;
+            color: white;
+            word-break: break-all;
+        }
+        .playlist-item .remove {
+            color: #64748b;
+            padding: 8px;
+            font-size: 18px;
+        }
+
+        .hint {
+            text-align: center;
+            color: #475569;
+            font-size: 11px;
+            line-height: 1.6;
+            margin-top: 20px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #475569;
+            margin: 16px 0;
+        }
+
+        /* 說明區塊 */
+        .help-section {
+            background: #1e3a5f;
+            border-left: 4px solid #3b82f6;
+            padding: 14px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 16px;
+        }
+        .help-section h4 {
+            color: #60a5fa;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .help-section ol {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+        .help-section code {
+            background: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌙 VOS 睡眠播放器</h1>
+        <p>自動連播・跳過片頭片尾・定時關閉</p>
+    </div>
+
+    <!-- 音訊輸入 -->
+    <div class="card">
+        <div class="card-title">🎵 貼上音訊網址（每行一個）</div>
+        <textarea class="audio-input" id="audioUrls" placeholder="https://example.com/audio1.mp3
+https://example.com/audio2.mp3
+..."></textarea>
+        <div class="btn-row">
+            <button class="btn-small btn-load" onclick="loadAudioUrls()">📥 載入播放</button>
+            <button class="btn-small btn-clear" onclick="clearAll()">清除</button>
+        </div>
+    </div>
+
+    <!-- 播放器 -->
+    <div class="card">
+        <div class="player-box">
+            <div class="now-playing" id="nowPlaying">尚未載入音訊</div>
+            <audio id="audioPlayer" controls preload="auto"></audio>
+        </div>
+    </div>
+
+    <!-- 計時器 -->
+    <div class="card timer-box">
+        <div class="timer-label">⏰ 倒數計時</div>
+        <div class="timer" id="timerDisplay">40:00</div>
+        <div class="status" id="statusText">等待開始...</div>
+    </div>
+
+    <!-- 設定 -->
+    <div class="card">
+        <div class="card-title">⚙️ 播放設定</div>
+        <div class="settings">
+            <div class="setting-item">
+                <label>跳過片頭（秒）</label>
+                <input type="number" id="skipStart" value="90" inputmode="numeric">
+            </div>
+            <div class="setting-item">
+                <label>跳過片尾（秒）</label>
+                <input type="number" id="skipEnd" value="50" inputmode="numeric">
+            </div>
+            <div class="setting-item">
+                <label>定時關閉（分鐘）</label>
+                <input type="number" id="duration" value="40" inputmode="numeric">
+            </div>
+            <div class="setting-item">
+                <label>當前進度</label>
+                <div class="progress-box" id="progressDisplay">--:-- / --:--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 控制按鈕 -->
+    <button class="btn-main btn-start" id="startBtn" onclick="togglePlayer()">
+        🎵 開始自動連播
+    </button>
+    <button class="btn-main btn-next" onclick="playNext()">
+        ⏭️ 下一集
+    </button>
+
+    <!-- 播放列表 -->
+    <div class="card" id="playlistSection" style="display:none;">
+        <div class="card-title">📜 播放列表</div>
+        <div id="playlistItems"></div>
+    </div>
+
+    <!-- 說明 -->
+    <div class="help-section">
+        <h4>💡 如何取得 VOS 音訊網址？</h4>
+        <ol>
+            <li>在<strong>電腦</strong>上打開 VOS 播放頁面</li>
+            <li>按 <code>F12</code> 開啟開發者工具</li>
+            <li>點擊 <code>Network</code> 標籤</li>
+            <li>播放音訊，找到 <code>.mp3</code> 檔案</li>
+            <li>右鍵 → Copy → Copy link address</li>
+            <li>貼到上方輸入框</li>
+        </ol>
+    </div>
+
+    <div class="hint">
+        ⚠️ 計時結束後會自動暫停並釋放螢幕鎖定<br>
+        手機將自動進入休眠黑屏省電
+    </div>
+
+    <script>
+        // ========== 狀態 ==========
+        let noSleep;
+        try {
+            noSleep = new NoSleep();
+        } catch(e) {
+            console.log('NoSleep 載入失敗', e);
+        }
+
+        let countdownSecs = 40 * 60;
+        let timerId = null;
+        let isRunning = false;
+        let skipCheckEnabled = false;
+        let playlist = [];
+        let currentIndex = 0;
+
+        // ========== DOM ==========
+        const audioPlayer = document.getElementById('audioPlayer');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const statusText = document.getElementById('statusText');
+        const startBtn = document.getElementById('startBtn');
+        const progressDisplay = document.getElementById('progressDisplay');
+        const nowPlaying = document.getElementById('nowPlaying');
+
+        // ========== 載入音訊 ==========
+        function loadAudioUrls() {
+            const text = document.getElementById('audioUrls').value.trim();
+            if (!text) {
+                alert('請貼上音訊網址！');
+                return;
+            }
+
+            // 解析多行網址
+            const urls = text.split('\n')
+                .map(u => u.trim())
+                .filter(u => u && (u.startsWith('http') || u.startsWith('//')));
+
+            if (urls.length === 0) {
+                alert('找不到有效的網址！\n請確保每行一個 http 開頭的網址');
+                return;
+            }
+
+            // 建立播放列表
+            playlist = urls.map((url, i) => ({
+                url: url,
+                title: '第 ' + (i + 1) + ' 集'
+            }));
+
+            currentIndex = 0;
+            renderPlaylist();
+            loadCurrentTrack();
+
+            statusText.textContent = '✅ 已載入 ' + playlist.length + ' 個音訊';
+            statusText.className = 'status playing';
+
+            // 儲存到 localStorage
+            try {
+                localStorage.setItem('vos_playlist', JSON.stringify(urls));
+            } catch(e) {}
+        }
+
+        function clearAll() {
+            document.getElementById('audioUrls').value = '';
+            playlist = [];
+            currentIndex = 0;
+            audioPlayer.src = '';
+            nowPlaying.textContent = '尚未載入音訊';
+            document.getElementById('playlistSection').style.display = 'none';
+            statusText.textContent = '已清除';
+            statusText.className = 'status';
+            try {
+                localStorage.removeItem('vos_playlist');
+            } catch(e) {}
+        }
+
+        function renderPlaylist() {
+            const section = document.getElementById('playlistSection');
+            const container = document.getElementById('playlistItems');
+
+            if (playlist.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            container.innerHTML = playlist.map((item, i) => `
+                <div class="playlist-item ${i === currentIndex ? 'active' : ''}" onclick="playTrack(${i})">
+                    <span class="num">${i + 1}</span>
+                    <span class="title">${item.title}</span>
+                </div>
+            `).join('');
+        }
+
+        function playTrack(index) {
+            currentIndex = index;
+            loadCurrentTrack();
+            renderPlaylist();
+
+            if (isRunning) {
+                skipCheckEnabled = false;
+                setTimeout(() => { skipCheckEnabled = true; }, 2000);
+                audioPlayer.play();
+            }
+        }
+
+        function loadCurrentTrack() {
+            if (playlist.length === 0) return;
+
+            const track = playlist[currentIndex];
+            audioPlayer.src = track.url;
+            audioPlayer.load();
+            nowPlaying.textContent = '🎵 ' + track.title + ' / 共 ' + playlist.length + ' 集';
+        }
+
+        // ========== 播放控制 ==========
+        function togglePlayer() {
+            if (isRunning) {
+                stopEverything();
+            } else {
+                startPlaying();
+            }
+        }
+
+        function startPlaying() {
+            if (!audioPlayer.src || audioPlayer.src === window.location.href) {
+                alert('請先載入音訊網址！');
+                return;
+            }
+
+            isRunning = true;
+
+            // NoSleep
+            if (noSleep) {
+                noSleep.enable();
+                console.log('NoSleep 已啟用');
+            }
+
+            // 播放
+            audioPlayer.play().then(() => {
+                console.log('開始播放');
+            }).catch(e => {
+                console.log('自動播放被阻止，請手動點擊播放按鈕', e);
+                statusText.textContent = '⚠️ 請先點擊上方播放按鈕';
+                statusText.className = 'status warning';
+            });
+
+            // 設定倒數
+            const mins = parseInt(document.getElementById('duration').value) || 40;
+            countdownSecs = mins * 60;
+            updateTimerDisplay();
+
+            // 啟動倒數
+            timerId = setInterval(() => {
+                countdownSecs--;
+                updateTimerDisplay();
+                if (countdownSecs <= 0) {
+                    stopEverything();
+                }
+            }, 1000);
+
+            // 延遲啟用跳過
+            skipCheckEnabled = false;
+            setTimeout(() => { skipCheckEnabled = true; }, 2000);
+
+            // UI
+            startBtn.textContent = '⏹️ 停止播放';
+            startBtn.className = 'btn-main btn-stop';
+            statusText.textContent = '▶️ 自動連播中...';
+            statusText.className = 'status playing';
+        }
+
+        function stopEverything() {
+            console.log('停止播放');
+
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+            }
+
+            audioPlayer.pause();
+
+            if (noSleep) {
+                noSleep.disable();
+                console.log('NoSleep 已停用');
+            }
+
+            isRunning = false;
+            startBtn.textContent = '🎵 開始自動連播';
+            startBtn.className = 'btn-main btn-start';
+            statusText.textContent = '⏹️ 已停止，螢幕將自動關閉';
+            statusText.className = 'status';
+
+            const mins = parseInt(document.getElementById('duration').value) || 40;
+            countdownSecs = mins * 60;
+            updateTimerDisplay();
+        }
+
+        function playNext() {
+            if (playlist.length === 0) {
+                statusText.textContent = '沒有播放列表';
+                statusText.className = 'status warning';
+                return;
+            }
+
+            currentIndex++;
+            if (currentIndex >= playlist.length) {
+                // 播完全部
+                statusText.textContent = '🎉 全部播放完畢';
+                statusText.className = 'status';
+                currentIndex = 0;
+                if (isRunning) {
+                    loadCurrentTrack();
+                    audioPlayer.play();
+                }
+            } else {
+                loadCurrentTrack();
+                if (isRunning) {
+                    skipCheckEnabled = false;
+                    setTimeout(() => { skipCheckEnabled = true; }, 2000);
+                    audioPlayer.play();
+                }
+            }
+            renderPlaylist();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(countdownSecs / 60);
+            const s = countdownSecs % 60;
+            timerDisplay.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            timerDisplay.style.color = countdownSecs <= 300 ? '#f87171' : '#fb923c';
+        }
+
+        // ========== 音訊事件 ==========
+        audioPlayer.ontimeupdate = () => {
+            if (!isRunning || !skipCheckEnabled) return;
+
+            const skipStart = parseInt(document.getElementById('skipStart').value) || 90;
+            const skipEnd = parseInt(document.getElementById('skipEnd').value) || 50;
+            const cur = audioPlayer.currentTime;
+            const dur = audioPlayer.duration;
+
+            // 更新進度
+            if (dur > 0) {
+                const fmt = (t) => {
+                    const m = Math.floor(t / 60);
+                    const s = Math.floor(t % 60);
+                    return `${m}:${s.toString().padStart(2, '0')}`;
+                };
+                progressDisplay.textContent = `${fmt(cur)} / ${fmt(dur)}`;
+            }
+
+            // 跳過片頭
+            if (cur < skipStart && cur > 0.5) {
+                console.log('跳過片頭');
+                audioPlayer.currentTime = skipStart;
+                statusText.textContent = '⏩ 已跳過片頭';
+                statusText.className = 'status playing';
+            }
+
+            // 跳過片尾
+            const remain = dur - cur;
+            if (remain <= skipEnd && dur > 0 && remain > 0) {
+                console.log('跳過片尾，下一集');
+                statusText.textContent = '⏭️ 切換下一集...';
+                playNext();
+            }
+        };
+
+        audioPlayer.onended = () => {
+            if (isRunning) {
+                playNext();
+            }
+        };
+
+        audioPlayer.onplay = () => {
+            if (isRunning) {
+                statusText.textContent = '▶️ 播放中...';
+                statusText.className = 'status playing';
+            }
+        };
+
+        audioPlayer.onpause = () => {
+            if (isRunning && countdownSecs > 0) {
+                statusText.textContent = '⏸️ 已暫停';
+                statusText.className = 'status warning';
+            }
+        };
+
+        audioPlayer.onerror = () => {
+            statusText.textContent = '❌ 音訊載入失敗';
+            statusText.className = 'status error';
+        };
+
+        // ========== 初始化 ==========
+        updateTimerDisplay();
+
+        // 嘗試恢復上次的播放列表
+        try {
+            const saved = localStorage.getItem('vos_playlist');
+            if (saved) {
+                document.getElementById('audioUrls').value = JSON.parse(saved).join('\n');
+            }
+        } catch(e) {}
+    </script>
+</body>
+</html>
