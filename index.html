@@ -414,11 +414,14 @@ https://example.com/audio2.mp3
                 return;
             }
 
-            // 建立播放列表
-            playlist = urls.map((url, i) => ({
-                url: url,
-                title: '第 ' + (i + 1) + ' 集'
-            }));
+            // 建立播放列表（使用節目名稱對照表）
+            playlist = urls.map((url, i) => {
+                // 從 URL 提取檔名
+                const filename = url.split('/').pop().replace('.mp3', '');
+                // 查找對應名稱，如果找不到則顯示集數
+                const title = episodeTitles[filename] || '第 ' + (i + 1) + ' 集';
+                return { url: url, title: title };
+            });
 
             currentIndex = 0;
             renderPlaylist();
@@ -668,13 +671,573 @@ https://example.com/audio2.mp3
         // ========== 初始化 ==========
         updateTimerDisplay();
 
-        // 嘗試恢復上次的播放列表
+        // 節目名稱對照表（檔名 -> 名稱）
+        const episodeTitles = {
+            '20231114190750': '1. 世界的開始-誕生',
+            '20230606084124': '2. 夏娃和果子-心與眼睛的掙扎',
+            '20230606084211': '3. 趕出伊甸園-罰與愛',
+            '20230606084244': '4. 該隱與亞伯-流浪悲歌',
+            '20230606084321': '5. 大家都這樣-步入黑暗中',
+            '20230606084354': '6. 挪亞造方舟-真正的聰明',
+            '20230606084425': '7. 方舟漂流記-堅持到底的信心',
+            '20230606084456': '8. 挪亞與彩虹-上帝新約的開始',
+            '20230606084526': '9. 超級摩天樓-你在說甚麼',
+            '20230606084603': '10. 追求夢想的亞伯蘭-信心的壯舉',
+            '20230606085341': '11. 埃及信心訓練團-從失敗中站起來就',
+            '20230606085419': '12. 真正的豐富-從給予到拒絕',
+            '20230606085453': '13. 和上帝打勾勾',
+            '20230606085559': '14. 撒萊幫上帝的忙',
+            '20230606085639': '15. 上帝信任的朋友-亞伯拉罕',
+            '20230606085742': '16. 所多瑪與俄摩拉的消失',
+            '20230606085812': '17. 巨人也會跌倒 有信心也要留心走',
+            '20230606085851': '18. 面面俱到的天父保護',
+            '20230606085924': '19. 亞伯拉罕的信心考驗',
+            '20230606090006': '20. 亞伯拉罕的黃昏歲月',
+            '20230606090059': '21. 以撒與利百加的千里相會',
+            '20230606090130': '22. 誰是老大',
+            '20230606090852': '23. 挖井高手以撒',
+            '20230606090930': '24. 以掃雅各的祝福爭奪戰',
+            '20230606091009': '25. 以掃丟了祝福 雅各丟了家',
+            '20230606091034': '26. 雅各被騙了',
+            '20230606091108': '27. 雅各家的生孩子大賽',
+            '20230606091142': '28. 上帝幫雅各養羊',
+            '20230606091222': '29. 拉班與雅各的和平之約',
+            '20230606091252': '30. 雅各平安回家',
+            '20230606092541': '31. 雅各家的復仇',
+            '20230606092627': '32. 雅各終於回到父家',
+            '20230606092656': '33. 約瑟被賣到埃及',
+            '20230606092721': '34. 約瑟是地下監獄長',
+            '20230606092758': '35. 約瑟從監牢到王宮',
+            '20230606092915': '36. 宰相約瑟',
+            '20230606092946': '37. 約瑟的夢境成真',
+            '20230606093023': '38. 雅各的難題',
+            '20230606093059': '39. 約瑟弟兄相認大團圓',
+            '20230606093135': '40. 雅各全家落戶埃及',
+            '20230606093221': '41. 雅各與約瑟的尾聲',
+            '20230606093255': '42. 摩西的出生與成長',
+            '20230606093422': '43. 摩西流浪曠野四十年',
+            '20230606093456': '44. 摩西重回埃及',
+            '20230606093923': '45. 尼羅河變紅了',
+            '20230606093955': '46. 埃及連環大災難之一',
+            '20230606094030': '47. 埃及連環大災難之二',
+            '20230606094156': '48. 擊殺長子之災與逾越節',
+            '20230606094221': '49. 紅海分開了',
+            '20230606094254': '50. 超越曠野的天父',
+            '20230606094332': '51. 天父是完全的供應者',
+            '20230606095934': '52. 以色列大軍',
+            '20230606100008': '53. 天父的命令',
+            '20230606100037': '54. 天父爸爸愛的叮嚀',
+            '20230606100105': '55. 四十天的等待',
+            '20230606100238': '56. 金牛犢悲歌',
+            '20230606100307': '57. 再一次的機會',
+            '20230606100347': '58. 建造聖墓（1）',
+            '20230606100415': '59. 建造聖墓（2）',
+            '20230606100444': '60. 樂極生悲的祭司',
+            '20230606100929': '61. 米利暗的失敗',
+            '20230606101056': '62. 上帝給錯地了嗎',
+            '20230606101130': '63. 摩西算甚麼',
+            '20230606101220': '64. 神選的才算數',
+            '20230606101248': '65. 隨意生氣的代價',
+            '20230606101316': '66. 新以色列大軍成型',
+            '20230606101341': '67. 會說話的驢子',
+            '20230606101420': '68. 天父的祝福不改變',
+            '20230606101450': '69. 小心誘惑',
+            '20230606101519': '70. 前進迦南的預備',
+            '20230606101550': '71. 摩西的接棒者約書亞',
+            '20230606101624': '72. 摩西死了',
+            '20230606101653': '73. 再探迦南',
+            '20230606101741': '74. 跨越約旦河',
+            '20230606101818': '75. 天父的軍隊',
+            '20230606102210': '76. 耶利哥城倒榻了',
+            '20230606102243': '77. 因小失大',
+            '20230606102449': '78. 再戰艾城',
+            '20230606102522': '79. 一場大騙局',
+            '20230606102553': '80. 大敗亞摩利五王聯軍',
+            '20230606102709': '81. 聯軍大混戰',
+            '20230606102807': '82. 分地為業_出發',
+            '20230606102842': '83. 分地的信心大戰',
+            '20230606102912': '84. 各家產業介紹',
+            '20230606102937': '85. 河西與河東',
+            '20230606103005': '86. 進迦南的尾聲',
+            '20230606103042': '87. 新時代序曲',
+            '20230606103113': '88. 士師123',
+            '20230606103147': '89. 女士師底波拉',
+            '20230606103221': '90. 小心翼翼的基甸(一)',
+            '20230606103251': '91. 小心翼翼的基甸(二)',
+            '20230606103318': '92. 小心翼翼的基甸(三)',
+            '20230606103353': '93. 基甸家的悲歌',
+            '20230606103446': '94. 亞比米勒的結局',
+            '20230606103557': '95. 流氓士師耶弗他',
+            '20230606103627': '96. 耶弗他的遺憾',
+            '20230606103653': '97. 耶弗他與以法蓮',
+            '20230606103724': '98. 獨行浪子-參孫(一)',
+            '20230606110129': '99. 獨行浪子-參孫(二)',
+            '20230606110301': '100. 獨行浪子-參孫(三)',
+            '20230606110622': '101. 黑暗谷底的士師時代',
+            '20230606110659': '102. 便雅憫的失落(一)',
+            '20230606110745': '103. 便雅憫的失落(二)',
+            '20230606110811': '104. 撒母耳的童年',
+            '20230606110833': '105. 以利家的悲哀',
+            '20230606110903': '106. 審判來臨',
+            '20230606110933': '107. 得勝的天父爸爸',
+            '20230606111011': '108. 以色列人要王不要神',
+            '20230606111035': '109. 選到掃羅',
+            '20230606111124': '110. 掃羅當王了',
+            '20230606111211': '111. 大敗亞捫人',
+            '20230606111250': '112. 被害怕打敗的掃羅',
+            '20230606111326': '113. 掃羅與約拿單',
+            '20230606111416': '114. 莽撞的掃羅王',
+            '20230606111527': '115. 自以為是的掃羅王',
+            '20230606111601': '116. 牧羊人大衛',
+            '20230606111632': '117. 樂手大衛',
+            '20230606111700': '118. 戰士大衛',
+            '20230606111736': '119. 英雄大衛',
+            '20230606111808': '120. 掃羅忌妒大衛',
+            '20230606111932': '121. 受冤的大衛',
+            '20230606112042': '122. 大衛開始逃亡',
+            '20230606112120': '123. 躲在曠野的大衛',
+            '20230606112157': '124. 祭司投靠大衛',
+            '20230606114000': '125. 大衛放過掃羅',
+            '20230606114052': '126. 無知急躁的拿八',
+            '20230606114114': '127. 大衛二度饒恕掃羅',
+            '20230606114137': '128. 大衛投奔非利士',
+            '20230606114210': '129. 一步之差',
+            '20230606114241': '130. 因禍得福的大衛',
+            '20230606114327': '131. 跌倒的英雄：掃羅',
+            '20230606114355': '132. 猶大與以色列',
+            '20230606114424': '133. 約押與押尼珥',
+            '20230606114510': '134. 掃羅家的敗落',
+            '20230606115246': '135. 天父生氣了',
+            '20230606115313': '136. 天父是王',
+            '20230606115348': '137. 守約感恩的大衛',
+            '20230606115418': '138. 守約感恩的大衛(二)',
+            '20230606115448': '139. 走錯路的大衛',
+            '20230606115515': '140. 被驚醒的大衛',
+            '20230606115542': '141. 大衛的禱告',
+            '20230606115700': '142. 暗嫩與押沙龍',
+            '20230606115743': '143. 押沙龍謀殺暗嫩',
+            '20230606115823': '144. 押沙龍回來了',
+            '20230606115858': '145. 押沙龍篡位',
+            '20230606120015': '146. 患難見真情',
+            '20230606120040': '147. 亞希多弗的聰明',
+            '20230606120121': '148. 看不見的幫助',
+            '20230606120155': '149. 押沙龍的下場',
+            '20230606120231': '150. 父親的愛',
+            '20230606120310': '151. 大衛饒恕背叛者',
+            '20230606120412': '152. 平定示巴的叛變',
+            '20230606120438': '153. 基遍人的冤屈',
+            '20230606120511': '154. 大衛的感恩',
+            '20230606121755': '155. 亞多尼雅的叛變',
+            '20230606121829': '156. 所羅門當王了',
+            '20230606121858': '157. 大衛的遺言',
+            '20230606121937': '158. 叛變的下場',
+            '20230606122053': '159. 所羅門的智慧',
+            '20230606122126': '160. 建造國家起造聖殿',
+            '20230606122208': '161. 聖殿完工了',
+            '20230606122252': '162. 獻上聖殿',
+            '20230606122321': '163. 示巴女王的到訪',
+            '20230606122355': '164. 所羅門的盛與衰',
+            '20230606122427': '165. 對所羅門的最後警告',
+            '20230606122518': '166. 以色列國的分裂',
+            '20230606122555': '167. 自以為聰明的耶羅波安',
+            '20230606122639': '168. 神的話不打折',
+            '20230606122739': '169. 天父才是真正的國王',
+            '20230606122817': '170. 亞比雅的突圍戰',
+            '20230606122854': '171. 亞撒王的失敗',
+            '20230606122950': '172. 亞撒王的驕傲',
+            '20230606123042': '173. 北國王位的鬥爭',
+            '20230606123243': '174. 先知以利亞登場',
+            '20230606173518': '175. 一個對付四百個(上)',
+            '20230606173552': '176. 一個對付四百個(下)',
+            '20230606173624': '177. 找到以利沙',
+            '20230606173654': '178. 亞哈王打敗敘利亞',
+            '20230606173738': '179. 不成熟的亞哈王',
+            '20230606173811': '180. 悔而不改的亞哈',
+            '20230607095306': '181. 米該雅說真話',
+            '20230607095353': '182. 亞哈王的結局',
+            '20230607095416': '183. 以利亞的最後一次使命',
+            '20230607095441': '184. 以利亞升天了',
+            '20230607095504': '185. 以利沙開始服事',
+            '20230607095531': '186. 神的恩典不缺乏',
+            '20230607095556': '187. 書念的偉大婦人',
+            '20230607095637': '188. 將軍乃縵的醫治',
+            '20230607095702': '189. 基哈西的貪心',
+            '20230607095725': '190. 神的大軍',
+            '20230607095751': '191. 餓死城中的解圍',
+            '20230607095814': '192. 書念婦人回家了',
+            '20230607095834': '193. 以利沙預言哈薛篡位',
+            '20230607095858': '194. 耶戶受膏',
+            '20230607095917': '195. 耶戶擊殺約蘭與耶洗別',
+            '20230607095936': '196. 耶戶清除亞哈家',
+            '20230607100001': '197. 耶戶清除巴力崇拜',
+            '20230607100129': '198. 約阿施當王了',
+            '20230607100156': '199. 約阿施修聖殿',
+            '20230607100219': '200. 以利沙的死',
+            '20230607100253': '201. 約拿的使命',
+            '20230607100313': '202. 北國亡國的開始',
+            '20230607100333': '203. 先知何西阿',
+            '20230607100355': '204. 何西阿的愛情故事',
+            '20230607100416': '205. 何西阿的呼喚',
+            '20230607100539': '206. 先知阿摩司',
+            '20230607100603': '207. 先知阿摩司(二)',
+            '20230607100627': '208. 先知阿摩司(三)',
+            '20230607100649': '209. 北國的滅亡',
+            '20230607100714': '210. 南國猶大續命',
+            '20230607100740': '211. 南國猶大的復興希西家',
+            '20230607100806': '212. 瀕臨滅亡的希西家',
+            '20230607100825': '213. 先知以賽亞的背景',
+            '20230607100845': '214. 先知以賽亞',
+            '20230607100911': '215. 先知以賽亞(二)',
+            '20230607100928': '216. 先知以賽亞(三)',
+            '20230607100951': '217. 先知以賽亞(四)',
+            '20230607101011': '218. 先知彌迦',
+            '20230607101032': '219. 先知彌迦(二)',
+            '20230607101051': '220. 惡王瑪拿西',
+            '20230607212604': '221. 先知那鴻',
+            '20230607212624': '222. 先知西番雅',
+            '20230607212642': '223. 先知哈巴谷',
+            '20230607212718': '224. 先知耶利米登場',
+            '20230607212737': '225. 先知耶利米(一)',
+            '20230607212800': '226. 先知耶利米(二)',
+            '20230607212820': '227. 先知耶利米(三)',
+            '20230607212838': '228. 約西亞的改革',
+            '20230607212859': '229. 約西亞的死與三個壞兒子',
+            '20230607212925': '230. 先知耶利米(四)',
+            '20230607212949': '231. 先知耶利米(五)',
+            '20230607213009': '232. 先知耶利米(六)',
+            '20230607213034': '233. 先知耶利米(七)',
+            '20230607213054': '234. 耶路撒冷滅亡',
+            '20230607213114': '235. 巴比倫王任命基大利',
+            '20230607213134': '236. 先知耶利米(八)',
+            '20230607213155': '237. 耶利米哀歌',
+            '20230607213220': '238. 俄巴底亞書',
+            '20230607213243': '239. 先知以西結登場',
+            '20230607213306': '240. 以西結的異象',
+            '20230607215638': '241. 領導者是為上帝來照顧百姓',
+            '20230607215702': '242. 以西結的末世預言',
+            '20230607215728': '243. 專心信靠上帝的但以理',
+            '20230607215834': '244. 不是解夢是為上帝代言',
+            '20230607215853': '245. 超越烈火的信心',
+            '20230607215914': '246. 巴比倫王的惡夢',
+            '20230607215937': '247. 空中的手指',
+            '20230607215958': '248. 波斯王大流士與但以理',
+            '20230607220138': '249. 但以理的怪夢',
+            '20230607220230': '250. 波斯與希臘的興起',
+            '20230607220308': '251. 上帝給但以理的神奇預言',
+            '20230607220636': '252. 世界的終局',
+            '20230607220721': '253. 重回耶路撒冷',
+            '20230607220805': '254. 聖殿動工',
+            '20230607220906': '255. 聖殿再度開工',
+            '20230607221024': '256. 重蓋聖殿，上帝的保證',
+            '20230607221044': '257. 控告變被告',
+            '20230607221100': '258. 聖殿完成了',
+            '20230607221125': '259. 以斯拉回到耶路撒冷',
+            '20230607221147': '260. 專心相信上帝',
+            '20230607221224': '261. 尼希米回到耶路撒冷',
+            '20230607221243': '262. 重建耶路撒冷城 開始',
+            '20230607221303': '263. 外患與內憂',
+            '20230607221423': '264. 52天的奇蹟',
+            '20230607221447': '265. 重新學習神的教導',
+            '20230607221506': '266. 信仰新生活',
+            '20230607221531': '267. 重建生活秩序',
+            '20230607221551': '268. 亞哈隨魯王與瓦實提',
+            '20230607221614': '269. 以斯帖當皇后了',
+            '20230607221634': '270. 哈曼的毒計',
+            '20230607221704': '271. 以斯帖的宴席',
+            '20230607221725': '272. 失眠的亞哈隨魯王',
+            '20230607221746': '273. 惡人哈曼的結局',
+            '20230607221818': '274. 普珥節開始了',
+            '20230607221850': '275. 天父爸爸的預告'
+        };
+
+        // 預設音訊網址列表
+        const defaultUrls = `https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20231114190750.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084124.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084211.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084244.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084321.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084354.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084425.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084456.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084526.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606084603.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085341.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085419.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085453.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085559.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085639.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085742.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085812.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085851.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606085924.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606090006.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606090059.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606090130.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606090852.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606090930.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606091009.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606091034.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606091108.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606091142.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606091222.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606091252.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092541.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092627.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092656.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092721.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092758.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092915.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606092946.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093023.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093059.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093135.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093221.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093255.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093422.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093456.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093923.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606093955.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606094030.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606094156.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606094221.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606094254.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606094332.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606095934.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100008.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100037.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100105.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100238.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100307.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100347.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100415.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100444.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606100929.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101056.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101130.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101220.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101248.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101316.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101341.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101420.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101450.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101519.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101550.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101624.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101653.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101741.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606101818.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102210.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102243.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102449.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102522.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102553.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102709.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102807.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102842.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102912.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606102937.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103005.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103042.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103113.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103147.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103221.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103251.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103318.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103353.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103446.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103557.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103627.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103653.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606103724.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110129.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110301.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110622.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110659.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110745.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110811.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110833.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110903.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606110933.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111011.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111035.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111124.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111211.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111250.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111326.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111416.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111527.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111601.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111632.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111700.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111736.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111808.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606111932.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606112042.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606112120.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606112157.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114000.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114052.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114114.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114137.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114210.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114241.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114327.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114355.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114424.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606114510.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115246.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115313.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115348.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115418.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115448.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115515.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115542.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115700.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115743.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115823.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606115858.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120015.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120040.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120121.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120155.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120231.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120310.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120412.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120438.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606120511.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606121755.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606121829.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606121858.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606121937.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122053.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122126.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122208.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122252.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122321.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122355.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122427.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122518.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122555.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122639.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122739.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122817.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122854.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606122950.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606123042.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606123243.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606173518.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606173552.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606173624.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606173654.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606173738.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230606173811.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095306.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095353.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095416.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095441.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095504.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095531.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095556.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095637.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095702.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095725.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095751.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095814.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095834.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095858.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095917.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607095936.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100001.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100129.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100156.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100219.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100253.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100313.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100333.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100355.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100416.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100539.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100603.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100627.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100649.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100714.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100740.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100806.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100825.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100845.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100911.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100928.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607100951.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607101011.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607101032.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607101051.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212604.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212624.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212642.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212718.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212737.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212800.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212820.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212838.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212859.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212925.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607212949.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213009.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213034.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213054.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213114.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213134.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213155.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213220.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213243.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607213306.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215638.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215702.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215728.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215834.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215853.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215914.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215937.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607215958.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220138.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220230.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220308.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220636.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220721.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220805.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607220906.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221024.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221044.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221100.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221125.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221147.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221224.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221243.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221303.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221423.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221447.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221506.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221531.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221551.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221614.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221634.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221704.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221725.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221746.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221818.mp3
+https://www.vos.org.tw/Datafile/UploadFile/Voice/2/20230607221850.mp3`;
+
+        // 嘗試恢復上次的播放列表，如果沒有則使用預設值
         try {
             const saved = localStorage.getItem('vos_playlist');
             if (saved) {
                 document.getElementById('audioUrls').value = JSON.parse(saved).join('\n');
+            } else {
+                document.getElementById('audioUrls').value = defaultUrls;
             }
-        } catch(e) {}
+        } catch(e) {
+            document.getElementById('audioUrls').value = defaultUrls;
+        }
     </script>
 </body>
 </html>
