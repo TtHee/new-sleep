@@ -34,6 +34,9 @@
         let isRunning = false;
         let skipCheckEnabled = false;
 
+        // 面板內元素的直接參照（避免 getElementById 抓到重複 ID）
+        let elSkipStart, elSkipEnd, elDuration, elTimer, elStatus, elProgress, elStartBtn, elMinimize;
+
         // ========== 建立控制面板 UI ==========
         function createPanel() {
             // 移除舊面板（如果存在）
@@ -213,9 +216,19 @@
             document.head.appendChild(style);
             document.body.appendChild(panel);
 
+            // 直接保留面板內元素的參照
+            elSkipStart = panel.querySelector('#vosSkipStart');
+            elSkipEnd = panel.querySelector('#vosSkipEnd');
+            elDuration = panel.querySelector('#vosDuration');
+            elTimer = panel.querySelector('#vosTimer');
+            elStatus = panel.querySelector('#vosStatus');
+            elProgress = panel.querySelector('#vosProgress');
+            elStartBtn = panel.querySelector('#vosStartBtn');
+            elMinimize = panel.querySelector('#vosMinimize');
+
             // 綁定事件
-            document.getElementById('vosMinimize').addEventListener('click', toggleMinimize);
-            document.getElementById('vosStartBtn').addEventListener('click', togglePlayer);
+            elMinimize.addEventListener('click', toggleMinimize);
+            elStartBtn.addEventListener('click', togglePlayer);
 
             console.log('[VOS Sleep] 控制面板已建立');
             alert('[VOS Sleep] 控制面板已載入！請查看右下角。');
@@ -224,9 +237,8 @@
         // ========== 最小化切換 ==========
         function toggleMinimize() {
             const panel = document.getElementById('vos-sleep-panel');
-            const btn = document.getElementById('vosMinimize');
             panel.classList.toggle('minimized');
-            btn.textContent = panel.classList.contains('minimized') ? '□' : '─';
+            elMinimize.textContent = panel.classList.contains('minimized') ? '□' : '─';
         }
 
         // ========== 尋找音訊元素 ==========
@@ -262,7 +274,7 @@
 
         // ========== 播放下一集 ==========
         function playNext() {
-            const status = document.getElementById('vosStatus');
+            const status = elStatus;
             const nextBtn = findNextButton();
 
             if (nextBtn) {
@@ -282,8 +294,8 @@
         // ========== 初始化自動播放器 ==========
         function initAutoPlayer() {
             const audio = findAudio();
-            const status = document.getElementById('vosStatus');
-            const progress = document.getElementById('vosProgress');
+            const status = elStatus;
+            const progress = elProgress;
 
             if (!audio) {
                 status.textContent = '❌ 偵測不到播放器';
@@ -301,10 +313,11 @@
             audio.ontimeupdate = () => {
                 if (!isRunning || !skipCheckEnabled) return;
 
-                const skipStartVal = parseInt(document.getElementById('vosSkipStart').value);
+                const skipStartVal = parseInt(elSkipStart.value);
                 const skipStart = isNaN(skipStartVal) ? 90 : skipStartVal;
-                const skipEndVal = parseInt(document.getElementById('vosSkipEnd').value);
+                const skipEndVal = parseInt(elSkipEnd.value);
                 const skipEnd = isNaN(skipEndVal) ? 50 : skipEndVal;
+                console.log('[VOS Sleep] 設定值 - 跳過片頭:', skipStart, '秒, 跳過片尾:', skipEnd, '秒');
                 const currentTime = audio.currentTime;
                 const duration = audio.duration;
 
@@ -357,8 +370,8 @@
 
         // ========== 開始/停止切換 ==========
         function togglePlayer() {
-            const btn = document.getElementById('vosStartBtn');
-            const status = document.getElementById('vosStatus');
+            const btn = elStartBtn;
+            const status = elStatus;
 
             if (isRunning) {
                 stopEverything();
@@ -372,8 +385,9 @@
             // 啟動時立即套用跳過片頭設定
             const audio = findAudio();
             if (audio) {
-                const skipStartVal = parseInt(document.getElementById('vosSkipStart').value);
+                const skipStartVal = parseInt(elSkipStart.value);
                 const skipStart = isNaN(skipStartVal) ? 90 : skipStartVal;
+                console.log('[VOS Sleep] 啟動 - 跳過片頭設定:', skipStart, '秒, 當前位置:', audio.currentTime);
                 if (skipStart > 0 && audio.currentTime < skipStart) {
                     audio.currentTime = skipStart;
                     console.log('[VOS Sleep] 啟動時跳過片頭至', skipStart, '秒');
@@ -385,7 +399,7 @@
                 console.log('[VOS Sleep] NoSleep 已啟用');
             }
 
-            const duration = parseInt(document.getElementById('vosDuration').value) || 40;
+            const duration = parseInt(elDuration.value) || 40;
             countdownSecs = duration * 60;
             updateTimerDisplay();
 
@@ -403,7 +417,7 @@
 
         // ========== 更新計時顯示 ==========
         function updateTimerDisplay() {
-            const timer = document.getElementById('vosTimer');
+            const timer = elTimer;
             const m = Math.floor(countdownSecs / 60);
             const s = countdownSecs % 60;
             timer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
@@ -428,16 +442,16 @@
             }
 
             isRunning = false;
-            const btn = document.getElementById('vosStartBtn');
-            const status = document.getElementById('vosStatus');
+            const btn = elStartBtn;
+            const status = elStatus;
 
             btn.textContent = '🎵 開始自動連播';
             btn.className = 'vos-btn vos-btn-start';
             status.textContent = '⏹️ 已停止，手機將自動黑屏休眠';
             status.style.color = '#94a3b8';
 
-            const duration = parseInt(document.getElementById('vosDuration').value) || 40;
-            countdownSecs = duration * 60;
+            const durationStop = parseInt(elDuration.value) || 40;
+            countdownSecs = durationStop * 60;
             updateTimerDisplay();
         }
 
