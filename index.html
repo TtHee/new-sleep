@@ -611,8 +611,10 @@ https://example.com/audio2.mp3
         audioPlayer.ontimeupdate = () => {
             if (!isRunning || !skipCheckEnabled) return;
 
-            const skipStart = parseInt(document.getElementById('skipStart').value) || 90;
-            const skipEnd = parseInt(document.getElementById('skipEnd').value) || 50;
+            const skipStartVal = parseInt(document.getElementById('skipStart').value);
+            const skipStart = isNaN(skipStartVal) ? 90 : skipStartVal;
+            const skipEndVal = parseInt(document.getElementById('skipEnd').value);
+            const skipEnd = isNaN(skipEndVal) ? 50 : skipEndVal;
             const cur = audioPlayer.currentTime;
             const dur = audioPlayer.duration;
 
