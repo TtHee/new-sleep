@@ -369,6 +369,17 @@
 
             isRunning = true;
 
+            // 啟動時立即套用跳過片頭設定
+            const audio = findAudio();
+            if (audio) {
+                const skipStartVal = parseInt(document.getElementById('vosSkipStart').value);
+                const skipStart = isNaN(skipStartVal) ? 90 : skipStartVal;
+                if (skipStart > 0 && audio.currentTime < skipStart) {
+                    audio.currentTime = skipStart;
+                    console.log('[VOS Sleep] 啟動時跳過片頭至', skipStart, '秒');
+                }
+            }
+
             if (noSleep) {
                 noSleep.enable();
                 console.log('[VOS Sleep] NoSleep 已啟用');
