@@ -449,8 +449,12 @@
     console.log('[VOS Sleep] 腳本開始載入...');
     console.log('[VOS Sleep] 當前網址:', window.location.href);
 
-    // 多重載入策略
+    // 多重載入策略（確保只執行一次）
+    let initialized = false;
     function tryInit() {
+        if (initialized) return;
+        if (!document.body) return;
+        initialized = true;
         console.log('[VOS Sleep] 嘗試初始化...');
         loadNoSleep(function() {
             console.log('[VOS Sleep] NoSleep 已載入');
